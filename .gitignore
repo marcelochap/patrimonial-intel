@@ -1,0 +1,80 @@
+# ── Secrets ───────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Pipeline outputs ──────────────────────────────────────────────────────────
+outputs/raw/
+outputs/processed/
+outputs/reports/
+outputs/seen_urls.json
+
+# ── Playwright ────────────────────────────────────────────────────────────────
+.playwright/
+playwright-report/
+test-results/
+
+# ── Node (caso playwright CLI ou outros tools JS sejam usados) ────────────────
+node_modules/
+.next/
+package-lock.json
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# Distribuição / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Virtualenvs
+.venv/
+venv/
+env/
+ENV/
+.Python
+
+# Instalação editável
+pip-wheel-metadata/
+*.pth
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# Cobertura de testes
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Literal
-from zoneinfo import ZoneInfo
-
 from loguru import logger
+
+try:
+    from zoneinfo import ZoneInfo
+    _BR_TZ = ZoneInfo("America/Sao_Paulo")
+except Exception:
+    from datetime import timezone as _tz
+    import datetime as _dt
+    _BR_TZ = _tz(_dt.timedelta(hours=-3))  # BRT fallback for Windows without tzdata
 
 LinkStatus = Literal["verified", "unverified", "unavailable"]
 
@@ -14,8 +20,6 @@ _PT_MONTHS = {
     "jan": 1, "fev": 2, "mar": 3, "abr": 4, "mai": 5, "jun": 6,
     "jul": 7, "ago": 8, "set": 9, "out": 10, "nov": 11, "dez": 12,
 }
-
-_BR_TZ = ZoneInfo("America/Sao_Paulo")
 
 
 class BaseScraper(ABC):
@@ -71,6 +75,21 @@ class BaseScraper(ABC):
             if month:
                 dt = datetime(int(year), month, int(day), tzinfo=_BR_TZ)
                 return dt.isoformat()
+
+        # Relative dates from Google Search: "há X horas", "X dias atrás", "X semana atrás"
+        now = datetime.now(tz=timezone.utc)
+        m = re.search(r"h[aá]\s+(\d+)\s+hora", raw, re.IGNORECASE)
+        if m:
+            return (now - timedelta(hours=int(m.group(1)))).isoformat()
+        m = re.search(r"(\d+)\s+dia", raw, re.IGNORECASE)
+        if m:
+            return (now - timedelta(days=int(m.group(1)))).isoformat()
+        m = re.search(r"(\d+)\s+semana", raw, re.IGNORECASE)
+        if m:
+            return (now - timedelta(weeks=int(m.group(1)))).isoformat()
+        m = re.search(r"(\d+)\s+min", raw, re.IGNORECASE)
+        if m:
+            return (now - timedelta(minutes=int(m.group(1)))).isoformat()
 
         logger.warning(f"[{self.source}] Could not parse date: {raw!r}")
         return raw

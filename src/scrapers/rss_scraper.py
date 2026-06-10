@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ssl
+import urllib.request
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -9,12 +11,26 @@ from loguru import logger
 from .base import BaseScraper
 
 FEEDS: dict[str, str] = {
+    # RSS funcionando
     "conjur": "https://www.conjur.com.br/rss.xml",
-    "migalhas": "https://www.migalhas.com.br/rss/quentes",
-    "dou": "https://www.in.gov.br/consulta/-/busca-dou/rss?q=&s=do1",
+    # STF — XML malformado mas feedparser consegue extrair entradas
     "stf": "https://portal.stf.jus.br/rss/noticiasRSS.asp",
-    "stj": "https://www.stj.jus.br/sites/portalp/Paginas/Comunicacao/Noticias/rss.aspx",
+    # Migalhas, DOU, STJ: feeds inacessíveis — cobertura via GoogleSearchScraper
 }
+
+
+# Feeds with self-signed or government certs that fail SSL verification
+_SSL_SKIP_FEEDS = {"stf", "stj", "dou"}
+
+def _fetch_feed_raw(url: str, skip_ssl: bool = False) -> str:
+    """Fetch raw RSS bytes, optionally skipping SSL verification."""
+    ctx = ssl.create_default_context()
+    if skip_ssl:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; patrimonial-intel/1.0)"})
+    with urllib.request.urlopen(req, context=ctx, timeout=10) as resp:
+        return resp.read()
 
 
 class RssScraper(BaseScraper):
@@ -30,10 +46,14 @@ class RssScraper(BaseScraper):
         for feed_source, url in self._feeds.items():
             logger.info(f"[rss] Fetching feed: {feed_source} ({url})")
             try:
-                parsed = feedparser.parse(url)
-                if parsed.get("bozo") and not parsed.entries:
-                    logger.warning(f"[rss] Bozo feed ({feed_source}): {parsed.bozo_exception}")
-                    continue
+                skip_ssl = feed_source in _SSL_SKIP_FEEDS
+                raw = _fetch_feed_raw(url, skip_ssl=skip_ssl)
+                parsed = feedparser.parse(raw)
+                if parsed.get("bozo"):
+                    if not parsed.entries:
+                        logger.warning(f"[rss] Bozo feed, no entries ({feed_source}): {parsed.bozo_exception}")
+                        continue
+                    logger.warning(f"[rss] Bozo feed but has entries ({feed_source}): {parsed.bozo_exception}")
 
                 for entry in parsed.entries:
                     item = self._parse_entry(entry, feed_source, cutoff, topic)

@@ -61,8 +61,8 @@ class GoogleSearchScraper(BaseScraper):
         topic: str,
         after_date: str,
     ) -> list[dict]:
-        query = f"site:{domain} {topic} after:{after_date}"
-        payload = {"q": query, "gl": "br", "hl": "pt-br", "num": 20}
+        query = f"site:{domain} {topic}"
+        payload = {"q": query, "gl": "br", "hl": "pt-br", "num": 10, "tbs": "qdr:d2"}
         headers = {"X-API-KEY": self._api_key, "Content-Type": "application/json"}
 
         logger.debug(f"[google_search] Query: {query!r}")

@@ -113,11 +113,11 @@ async def _fetch_topic(
                     rss = RssScraper(feeds=rss_feeds)
                     rss_items = await rss.fetch(topic=query_str)
 
-            relevant = [i for i in rss_items if _is_keyword_relevant(i, keywords)]
-            for item in relevant:
+            # For RSS: accept all items — Reporter/Curador will score relevance
+            for item in rss_items:
                 item["topic"] = topic_key
-            items.extend(relevant)
-            logger.info(f"[investigador] [{topic_key}] RSS: {len(relevant)} relevant items")
+            items.extend(rss_items)
+            logger.info(f"[investigador] [{topic_key}] RSS: {len(rss_items)} items")
         except Exception as exc:
             logger.warning(f"[investigador] [{topic_key}] RSS failed: {exc}")
             errors.append({"topic": topic_key, "scraper": "rss", "error": str(exc)})
@@ -136,11 +136,11 @@ async def _fetch_topic(
                     gs = GoogleSearchScraper(domains=search_domains)
                     gs_items = await gs.fetch(topic=query_str)
 
-            relevant_gs = [i for i in gs_items if _is_keyword_relevant(i, keywords)]
-            for item in relevant_gs:
+            # Google Search already filtered by query — accept all returned items
+            for item in gs_items:
                 item["topic"] = topic_key
-            items.extend(relevant_gs)
-            logger.info(f"[investigador] [{topic_key}] Google Search: {len(relevant_gs)} relevant items")
+            items.extend(gs_items)
+            logger.info(f"[investigador] [{topic_key}] Google Search: {len(gs_items)} items")
         except Exception as exc:
             logger.warning(f"[investigador] [{topic_key}] Google Search failed: {exc}")
             errors.append({"topic": topic_key, "scraper": "google_search", "error": str(exc)})

@@ -122,16 +122,17 @@ async def run(input_path: str | Path, output_path: str | Path | None = None) -> 
         output_path = Path("outputs") / "raw" / f"reporter_{today}.json"
     output_path = Path(output_path)
 
-    raw_data: dict[str, list[dict[str, Any]]] = json.loads(
-        input_path.read_text(encoding="utf-8")
-    )
+    envelope: dict[str, Any] = json.loads(input_path.read_text(encoding="utf-8"))
+    # Support both flat {topic: [items]} and wrapped {"topics": {topic: [items]}, ...}
+    topics_data: dict[str, list[dict[str, Any]]] = envelope.get("topics", envelope)
 
     tracker = CostTracker()
     client = anthropic.AsyncAnthropic()
 
     topic_tasks = {
         topic: _process_topic(client, tracker, topic, items)
-        for topic, items in raw_data.items()
+        for topic, items in topics_data.items()
+        if isinstance(items, list)
     }
 
     results_per_topic = await asyncio.gather(*topic_tasks.values())

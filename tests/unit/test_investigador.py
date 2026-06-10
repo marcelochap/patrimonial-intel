@@ -62,7 +62,8 @@ class TestRssScraper:
         fake_feed.entries = [entry]
         fake_feed.get = lambda key, default=None: default  # bozo=None
 
-        with patch("feedparser.parse", return_value=fake_feed):
+        with patch("src.scrapers.rss_scraper._fetch_feed_raw", return_value=b"<rss/>"), \
+             patch("feedparser.parse", return_value=fake_feed):
             scraper = RssScraper(feeds={"stf": "https://stf.jus.br/rss"})
             results = await scraper.fetch(topic="1")
 
@@ -87,7 +88,8 @@ class TestRssScraper:
         fake_feed.entries = [entry]
         fake_feed.get = lambda key, default=None: default
 
-        with patch("feedparser.parse", return_value=fake_feed):
+        with patch("src.scrapers.rss_scraper._fetch_feed_raw", return_value=b"<rss/>"), \
+             patch("feedparser.parse", return_value=fake_feed):
             scraper = RssScraper(feeds={"stf": "https://stf.jus.br/rss"})
             results = await scraper.fetch(topic="1")
 
